@@ -67,64 +67,71 @@ router.post("/login", (req, res) => {
   }
 });
 
-router.get("/newUser", validateToken, (req, res) => {
+router.get("/getUserToShow", validateToken, async (req, res) => {
   try {
-    User.findOne({ _id: req.user.id }).then((foundUser) => {
-      User.find({}, (users) => {
-        if (foundUser.likedUsers.length + foundUser.dislikedUsers.length < users.length) {
-          let newUser = users[randomNumber(0, users.length)];
-          while (foundUser.dislikedUsers.include(newUser._id) || foundUser.likedUsers.include(newUser._id)) {
-            newUser = users[randomNumber(0, users.length)];
-          }
-          res.status(200).json({ name: newUser.name, description: newUser.description });
-        } else if (foundUser.likedUsers.length < users.length) {
-          let newUser = users[randomNumber(0, users.length)];
-          while (foundUser.dislikedUsers.include(newUser)) {
-            newUser = users[randomNumber(0, users.length)];
-          }
-          res.status(200).json({ name: newUser.name, description: newUser.description });
-        } else {
-          res.status(404).send("no viable users found");
-        }
-      });
-    });
+    const user = await awaitUser.findOne({ _id: req.user.id });
+
+    // get users that are yet to be rated
+    let users = await User.find({ _id: { $nin: [...user.likedUsers, ...user.dislikedUsers, user._id] } });
+
+    // if no such users are found get users that are yet to be liked
+    if (users.length == 0) {
+      users = await User.find({ _id: { $nin: [...user.likedUsers, user._id] } });
+    }
+
+    // if no such users are found return nothing
+    if (users.length == 0) {
+      res.status(401).send("no viable users found");
+    } else {
+      // get a random user from found users
+      const targetUser = users[randomNumber(0, users.length)];
+      res.status(200).json({ name: targetUser.name, description: targetUser.description });
+    }
   } catch (err) {
     console.log(err);
   }
 });
 
-router.post("/like", validateToken, (req, res) => {
+router.post("/like", validateToken, async (req, res) => {
   try {
-    User.findOne({ _id: req.user.id }).then((foundUser) => {
-      const index = foundUser.dislikedUsers.indexOf(req.body.targetId);
-      if (index >= 0) {
-        foundUser.dislikedUsers.splice(index, 1);
-      }
-      foundUser.likedUsers.push(req.body.targetId);
-      foundUser.save();
-    });
+    const user = await User.findOne({ _id: req.user.id });
+
+    // remove liked user from disliked users
+    const index = foundUser.dislikedUsers.indexOf(req.body.targetId);
+    if (index >= 0) {
+      user.dislikedUsers.splice(index, 1);
+    }
+
+    // save liked user to likedUsers
+    user.likedUsers.push(req.body.targetId);
+    user.save();
   } catch (err) {
     console.log(err);
   }
 });
 
-router.post("/dislike", validateToken, (req, res) => {
+router.post("/dislike", validateToken, async (req, res) => {
   try {
-    User.findOne({ _id: req.user.id }).then((foundUser) => {
-      const index = foundUser.likedUsers.indexOf(req.body.targetId);
-      if (index >= 0) {
-        foundUser.likedUsers.splice(index, 1);
-      }
-      foundUser.dislikedUsers.push(req.body.targetId);
-      foundUser.save();
-    });
+    const user = await User.findOne({ _id: req.user.id });
+
+    // remove disliked user from liked users
+    const index = foundUser.likedUsers.indexOf(req.body.targetId);
+    if (index >= 0) {
+      user.likedUsers.splice(index, 1);
+    }
+
+    // save liked user to dislikedUsers
+    user.dislikedUsers.push(req.body.targetId);
+    user.save();
   } catch (err) {
     console.log(err);
   }
 });
 
 function randomNumber(min, max) {
-  if (max > min) {
+  // returns [min, max[
+  // if min == max, return min
+  if (max >= min) {
     return Math.floor(Math.random() * (max - min)) + min;
   }
   return null;
