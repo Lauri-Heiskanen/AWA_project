@@ -5,7 +5,6 @@ var router = express.Router();
 const { body, validationResult } = require("express-validator");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { ObjectID } = require;
 
 const User = require("../models/User");
 const Chat = require("../models/Chat");
@@ -23,7 +22,6 @@ router.post(
   body("password").isStrongPassword({ minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1, minSymbols: 1 }),
   async (req, res) => {
     try {
-      console.log(req.body);
       if (validationResult(req).isEmpty()) {
         User.findOne({ email: req.body.email }).then((user) => {
           if (user != null) {
@@ -148,7 +146,6 @@ router.get("/matches", validateToken, async (req, res) => {
 router.post("/message", validateToken, async (req, res) => {
   try {
     // at this point the chat has already been created
-    const user = await User.findOne({ _id: req.user.id });
     const chat = await Chat.findOne({ _id: req.body.chatId });
     if (chat == null) {
       res.status(404).send("failed to find chat");
