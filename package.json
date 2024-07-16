@@ -11,5 +11,6 @@
   },
   "author": "Lauri Heiskanen",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {}
 }

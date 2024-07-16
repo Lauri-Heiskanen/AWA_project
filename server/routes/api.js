@@ -1,8 +1,14 @@
+require("dotenv").config();
+
 var express = require("express");
 var router = express.Router();
 const { body, validationResult } = require("express-validator");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const { ObjectID } = require;
 
 const User = require("../models/User");
+const Chat = require("../models/Chat");
 const validateToken = require("../auth/validateToken");
 
 /* GET users listing. */
@@ -12,11 +18,12 @@ router.get("/", function (req, res, next) {
 
 router.post(
   "/register",
-  body("name").trim().isLength({ min: 1, max: 256 }).isAlpha().withMessage("invalid name"),
-  body("email").trim().isEmail().withMessage("invalid email"),
+  body("name").trim().isLength({ min: 1, max: 256 }).isAlpha(),
+  body("email").trim().isEmail(),
   body("password").isStrongPassword({ minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1, minSymbols: 1 }),
   async (req, res) => {
     try {
+      console.log(req.body);
       if (validationResult(req).isEmpty()) {
         User.findOne({ email: req.body.email }).then((user) => {
           if (user != null) {
@@ -34,7 +41,7 @@ router.post(
           }
         });
       } else {
-        res.status(400).send();
+        res.status(400).send(validationResult(req));
       }
     } catch (err) {
       console.log(err);
@@ -43,21 +50,19 @@ router.post(
   }
 );
 
-router.post("/login", (req, res) => {
+router.post("/login", async (req, res) => {
   try {
-    User.findOne({ email: req.body.email }).then((foundUser) => {
+    User.findOne({ email: req.body.email }).then(async (foundUser) => {
       if (bcrypt.compareSync(req.body.password, foundUser.password) && req.body.password) {
-        jwt.sign(
+        const token = jwt.sign(
           {
             id: foundUser._id,
             email: foundUser.email,
           },
           process.env.SECRET,
-          { expiresIn: 120 },
-          (err, token) => {
-            res.json({ success: true, token });
-          }
+          { expiresIn: 120 }
         );
+        res.json({ success: true, token });
       } else {
         res.status(400).send("auth failed");
       }
@@ -69,7 +74,7 @@ router.post("/login", (req, res) => {
 
 router.get("/getUserToShow", validateToken, async (req, res) => {
   try {
-    const user = await awaitUser.findOne({ _id: req.user.id });
+    const user = await User.findOne({ _id: req.user.id });
 
     // get users that are yet to be rated
     let users = await User.find({ _id: { $nin: [...user.likedUsers, ...user.dislikedUsers, user._id] } });
@@ -97,7 +102,7 @@ router.post("/like", validateToken, async (req, res) => {
     const user = await User.findOne({ _id: req.user.id });
 
     // remove liked user from disliked users
-    const index = foundUser.dislikedUsers.indexOf(req.body.targetId);
+    const index = user.dislikedUsers.indexOf(req.body.targetId);
     if (index >= 0) {
       user.dislikedUsers.splice(index, 1);
     }
@@ -105,6 +110,7 @@ router.post("/like", validateToken, async (req, res) => {
     // save liked user to likedUsers
     user.likedUsers.push(req.body.targetId);
     user.save();
+    res.status(200).send("ok");
   } catch (err) {
     console.log(err);
   }
@@ -115,7 +121,7 @@ router.post("/dislike", validateToken, async (req, res) => {
     const user = await User.findOne({ _id: req.user.id });
 
     // remove disliked user from liked users
-    const index = foundUser.likedUsers.indexOf(req.body.targetId);
+    const index = user.likedUsers.indexOf(req.body.targetId);
     if (index >= 0) {
       user.likedUsers.splice(index, 1);
     }
@@ -123,6 +129,56 @@ router.post("/dislike", validateToken, async (req, res) => {
     // save liked user to dislikedUsers
     user.dislikedUsers.push(req.body.targetId);
     user.save();
+    res.status(200).send("ok");
+  } catch (err) {
+    console.log(err);
+  }
+});
+
+router.get("/matches", validateToken, async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.user.id });
+    const matchedUsers = await getMatches(user);
+    res.json(matchedUsers.map((u) => u.name));
+  } catch (err) {
+    console.log(err);
+  }
+});
+
+router.post("/message", validateToken, async (req, res) => {
+  try {
+    // at this point the chat has already been created
+    const user = await User.findOne({ _id: req.user.id });
+    const chat = await Chat.findOne({ _id: req.body.chatId });
+    if (chat == null) {
+      res.status(404).send("failed to find chat");
+    } else {
+      chat.messages.push({ sender: req.user.id, text: req.body.text });
+      chat.save();
+      res.status(200).send("ok");
+    }
+  } catch (err) {
+    console.log(err);
+  }
+});
+
+router.get("/chat/:targetUserId", validateToken, async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.user.id });
+    // check that the user and target user are matched
+    const matchedUsers = await getMatches(user);
+    if (matchedUsers.map((user) => user._id.toString()).includes(req.params.targetUserId)) {
+      // find chat where "users" contains both ids
+      let chat = await Chat.findOne({ users: { $all: [user._id, req.params.targetUserId] } });
+      // if chat isn't found, it is created
+      if (chat == null) {
+        chat = new Chat({ users: [user._id, req.params.targetUserId], messages: [] });
+        new Chat(chat).save();
+      }
+      res.status(200).json({ user: (await User.findOne({ _id: req.params.targetUserId })).name, messages: chat.messages, chatId: chat._id });
+    } else {
+      res.status(400).send("not matched with target user");
+    }
   } catch (err) {
     console.log(err);
   }
@@ -135,6 +191,12 @@ function randomNumber(min, max) {
     return Math.floor(Math.random() * (max - min)) + min;
   }
   return null;
+}
+
+async function getMatches(user) {
+  const likedUsers = await User.find({ _id: { $in: [...user.likedUsers] } });
+  const matchedUsers = likedUsers.filter((u) => u.likedUsers.includes(user._id));
+  return matchedUsers;
 }
 
 module.exports = router;
