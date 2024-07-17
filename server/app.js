@@ -3,6 +3,7 @@ var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 const mongoose = require("mongoose");
+const cors = require("cors");
 
 var apiRouter = require("./routes/api");
 
@@ -31,7 +32,7 @@ if (process.env.NODE_ENV === "production") {
     origin: "http://localhost:3000",
     optionsSuccessStatus: 200,
   };
-  app.user(cors(corsOptions));
+  app.use(cors(corsOptions));
 }
 
 module.exports = app;

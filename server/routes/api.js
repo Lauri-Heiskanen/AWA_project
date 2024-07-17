@@ -10,9 +10,12 @@ const User = require("../models/User");
 const Chat = require("../models/Chat");
 const validateToken = require("../auth/validateToken");
 
-/* GET users listing. */
 router.get("/", function (req, res, next) {
   res.send("api is up and running");
+});
+
+router.get("/token", validateToken, (req, res) => {
+  res.json(req.user);
 });
 
 router.post(
@@ -88,7 +91,7 @@ router.get("/getUserToShow", validateToken, async (req, res) => {
     } else {
       // get a random user from found users
       const targetUser = users[randomNumber(0, users.length)];
-      res.status(200).json({ name: targetUser.name, description: targetUser.description });
+      res.status(200).json({ name: targetUser.name, description: targetUser.description, id: targetUser._id });
     }
   } catch (err) {
     console.log(err);
