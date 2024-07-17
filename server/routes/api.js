@@ -14,6 +14,45 @@ router.get("/", function (req, res, next) {
   res.send("api is up and running");
 });
 
+router.get("/user", validateToken, async (req, res) => {
+  const user = await User.findOne({ _id: req.user.id });
+  res.status(200).json({ email: user.email, name: user.name, description: user.description, likedUsers: user.likedUsers, dislikedUsers: user.dislikedUsers });
+});
+
+router.get("/user/name/:id", validateToken, async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.user.id });
+
+    // check that the user and target user are matched or are the same
+    const matchedUsers = await getMatches(user);
+    if (matchedUsers.map((u) => u._id.toString()).includes(req.params.id) || req.user.id == req.params.id) {
+      const targetUser = await User.findOne({ _id: req.params.id });
+      res.status(200).send({ name: targetUser.name });
+    } else {
+      res.status(403).send("not matched with target user");
+    }
+  } catch (err) {
+    console.log(err);
+  }
+});
+
+router.get("/user/description/:id", validateToken, async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.user.id });
+
+    // check that the user and target user are matched or are the same
+    const matchedUsers = await getMatches(user);
+    if (matchedUsers.map((u) => u._id.toString()).includes(req.params.id) || req.user.id == req.params.id) {
+      const targetUser = await User.findOne({ _id: req.params.id });
+      res.status(200).send({ description: targetUser.description });
+    } else {
+      res.status(403).send("not matched with target user");
+    }
+  } catch (err) {
+    console.log(err);
+  }
+});
+
 router.get("/authenticated", (req, res) => {
   // this is mostly copied from Erno Vanhala's web-applications-week-8/auth/validateToken.js course material
   const authHeader = req.headers["authorization"];

@@ -4,7 +4,7 @@ function like(email, password) {
     body: JSON.stringify({
       targetId: id,
     }),
-    headers: { "Content-type": "application/json; charset=UTF-8" },
+    headers: { Authorization: "Bearer " + localStorage.getItem("token"), "Content-type": "application/json; charset=UTF-8" },
   }).then((res) => res.json());
 }
 

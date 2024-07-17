@@ -8,7 +8,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path='/' exact element={<Swiping name='nih' description='dunno, stuff and thing... propably' />} />
+        <Route path='/' exact element={<Swiping />} />
         <Route path='/login' exact element={<Login email='asd@b.com' password='1Aa_12345' />} />
         <Route path='*' exact element={<Navigate to='/login' replace />} />
       </Routes>

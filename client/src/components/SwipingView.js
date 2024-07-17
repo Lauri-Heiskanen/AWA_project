@@ -1,25 +1,28 @@
 import { useEffect } from "react";
 import checkAuthentication from "../apiRequests/checkAuthentication";
+import getUserToShow from "../apiRequests/getUserToShow";
+import { decodeToken } from "react-jwt";
 import { useNavigate } from "react-router-dom";
 
-function SwipingView({ name, description }) {
+function SwipingView() {
   const navigate = useNavigate();
   useEffect(() => {
     checkAuthentication(localStorage.getItem("token")).then((isAuthenticated) => {
-      console.log(isAuthenticated);
       if (!isAuthenticated) {
         navigate("/login");
       }
     });
   });
 
+  console.log(decodeToken(localStorage.getItem("token")));
+
   return (
     <>
       <div>
         <div>
-          <h3>{name}</h3>
+          <h3>name</h3>
           <br />
-          <p>{description}</p>
+          <p>description</p>
         </div>
 
         <button onClick={dislikeButton}>
@@ -40,7 +43,5 @@ function likeButton() {
 function dislikeButton() {
   console.log("disliked");
 }
-
-async function getUserToShow() {}
 
 export default SwipingView;

@@ -2,6 +2,7 @@ import { useState } from "react";
 import login from "../apiRequests/login";
 import checkAuthentication from "../apiRequests/checkAuthentication";
 import { useNavigate } from "react-router-dom";
+import getDescription from "../apiRequests/getDescription";
 
 function Login({ email, password }) {
   const [emailText, setEmailText] = useState(email);
@@ -19,7 +20,7 @@ function Login({ email, password }) {
             console.log(res);
             if (res.success) {
               localStorage.setItem("token", res.token);
-              navigate("/");
+              // navigate("/");
             } else {
               localStorage.setItem("token", "");
             }
@@ -28,15 +29,7 @@ function Login({ email, password }) {
       >
         Login
       </button>
-      <button
-        onClick={() => {
-          checkAuthentication(localStorage.getItem("token")).then((isAuthenticated) => {
-            console.log(isAuthenticated);
-          });
-        }}
-      >
-        Test
-      </button>
+      <button onClick={() => getDescription("6696c3b71e6c57ae09d14977").then(console.log)}>Test</button>
     </div>
   );
 }
