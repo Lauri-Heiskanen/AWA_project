@@ -10,9 +10,11 @@ module.exports = function (req, res, next) {
   } else {
     token = null;
   }
-  if (token == null) return res.sendStatus(401);
+  if (token == null) {
+    return res.redirect(401, "/login");
+  }
   jwt.verify(token, process.env.SECRET, (err, user) => {
-    if (err) return res.sendStatus(401);
+    if (err) return res.redirect(401, "/login");
     req.user = user;
     next();
   });

@@ -1,10 +1,14 @@
 import { useState } from "react";
 import login from "../apiRequests/login";
+import checkAuthentication from "../apiRequests/checkAuthentication";
+import { useNavigate } from "react-router-dom";
 
-function Login() {
-  const [emailText, setEmailText] = useState("asd@b.com");
-  const [passwordText, setPasswordText] = useState("1Aa_12345");
-  const [token, setToken] = useState("");
+function Login({ email, password }) {
+  const [emailText, setEmailText] = useState(email);
+  const [passwordText, setPasswordText] = useState(password);
+  localStorage.setItem("token", "");
+  const navigate = useNavigate();
+
   return (
     <div>
       <textarea value={emailText} onChange={(e) => setEmailText(e.target.value)}></textarea>
@@ -13,26 +17,25 @@ function Login() {
         onClick={() =>
           login(emailText, passwordText).then((res) => {
             console.log(res);
-            setToken(res.token);
             if (res.success) {
-              setToken(res.token);
-              fetch("/api/", {
-                method: "get",
-                headers: { Authorization: "Bearer " + res.token, "Content-type": "application/json; charset=UTF-8" },
-              }).then(console.log);
-              fetch("/api/token", {
-                method: "get",
-                headers: { Authorization: "Bearer " + res.token, "Content-type": "application/json; charset=UTF-8" },
-              })
-                .then((res) => res.json())
-                .then(console.log);
+              localStorage.setItem("token", res.token);
+              navigate("/");
             } else {
-              setToken("");
+              localStorage.setItem("token", "");
             }
           })
         }
       >
         Login
+      </button>
+      <button
+        onClick={() => {
+          checkAuthentication(localStorage.getItem("token")).then((isAuthenticated) => {
+            console.log(isAuthenticated);
+          });
+        }}
+      >
+        Test
       </button>
     </div>
   );

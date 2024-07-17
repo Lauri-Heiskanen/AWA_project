@@ -1,7 +1,17 @@
-import { useState } from "react";
+import { useEffect } from "react";
+import checkAuthentication from "../apiRequests/checkAuthentication";
+import { useNavigate } from "react-router-dom";
 
 function SwipingView({ name, description }) {
-  //login().then((data) => console.log(data));
+  const navigate = useNavigate();
+  useEffect(() => {
+    checkAuthentication(localStorage.getItem("token")).then((isAuthenticated) => {
+      console.log(isAuthenticated);
+      if (!isAuthenticated) {
+        navigate("/login");
+      }
+    });
+  });
 
   return (
     <>
@@ -24,7 +34,6 @@ function SwipingView({ name, description }) {
 }
 
 function likeButton() {
-  console.log(localStorage);
   console.log("liked");
 }
 

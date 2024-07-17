@@ -14,8 +14,17 @@ router.get("/", function (req, res, next) {
   res.send("api is up and running");
 });
 
-router.get("/token", validateToken, (req, res) => {
-  res.json(req.user);
+router.get("/authenticated", (req, res) => {
+  // this is mostly copied from Erno Vanhala's web-applications-week-8/auth/validateToken.js course material
+  const authHeader = req.headers["authorization"];
+  let token = null;
+  if (authHeader) {
+    token = authHeader.split(" ")[1];
+  }
+  jwt.verify(token, process.env.SECRET, (err, user) => {
+    if (err) res.json({ authenticated: false });
+    else res.json({ authenticated: true });
+  });
 });
 
 router.post(
@@ -28,7 +37,7 @@ router.post(
       if (validationResult(req).isEmpty()) {
         User.findOne({ email: req.body.email }).then((user) => {
           if (user != null) {
-            res.status(403).json({ email: "email taken" });
+            res.status(400).json({ email: "email taken" });
           } else {
             new User({
               name: req.body.name,
@@ -38,7 +47,7 @@ router.post(
               likedUsers: [],
               dislikedUsers: [],
             }).save();
-            res.status(200).send("ok");
+            res.status(201).send("ok");
           }
         });
       } else {
@@ -65,7 +74,7 @@ router.post("/login", async (req, res) => {
         );
         res.json({ success: true, token });
       } else {
-        res.status(400).send("auth failed");
+        res.status(401).send("auth failed");
       }
     });
   } catch (err) {
@@ -87,7 +96,7 @@ router.get("/getUserToShow", validateToken, async (req, res) => {
 
     // if no such users are found return nothing
     if (users.length == 0) {
-      res.status(401).send("no viable users found");
+      res.status(404).send("no viable users found");
     } else {
       // get a random user from found users
       const targetUser = users[randomNumber(0, users.length)];
@@ -111,7 +120,7 @@ router.post("/like", validateToken, async (req, res) => {
     // save liked user to likedUsers
     user.likedUsers.push(req.body.targetId);
     user.save();
-    res.status(200).send("ok");
+    res.status(201).send("ok");
   } catch (err) {
     console.log(err);
   }
@@ -130,7 +139,7 @@ router.post("/dislike", validateToken, async (req, res) => {
     // save liked user to dislikedUsers
     user.dislikedUsers.push(req.body.targetId);
     user.save();
-    res.status(200).send("ok");
+    res.status(201).send("ok");
   } catch (err) {
     console.log(err);
   }
@@ -177,7 +186,7 @@ router.get("/chat/:targetUserId", validateToken, async (req, res) => {
       }
       res.status(200).json({ user: (await User.findOne({ _id: req.params.targetUserId })).name, messages: chat.messages, chatId: chat._id });
     } else {
-      res.status(400).send("not matched with target user");
+      res.status(403).send("not matched with target user");
     }
   } catch (err) {
     console.log(err);
