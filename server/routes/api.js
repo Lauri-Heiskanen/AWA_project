@@ -113,6 +113,94 @@ router.post(
   }
 );
 
+router.post("/updateName", validateToken, body("name").trim().isLength({ min: 1, max: 256 }), async (req, res) => {
+  try {
+    if (validationResult(req).isEmpty()) {
+      User.findOne({ _id: req.user.id }).then((user) => {
+        if (user == null) {
+          return res.status(404).send("user not found");
+        } else {
+          user.name = req.body.name;
+          return user.save().then(() => res.status(200).send("ok"));
+        }
+      });
+    } else {
+      res.status(400).send(validationResult(req));
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(400).send("something went wrong");
+  }
+});
+
+router.post("/updateDescription", validateToken, async (req, res) => {
+  try {
+    User.findOne({ _id: req.user.id }).then((user) => {
+      if (user == null) {
+        return res.status(404).send("user not found");
+      } else {
+        user.description = req.body.description;
+        return user.save().then(() => res.status(200).send("ok"));
+      }
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(400).send("something went wrong");
+  }
+});
+
+router.post("/updateEmail", validateToken, body("email").trim().isEmail(), async (req, res) => {
+  try {
+    if (validationResult(req).isEmpty()) {
+      User.findOne({ email: req.body.email }).then((user) => {
+        if (user != null) {
+          return res.status(400).json({ email: "email taken" });
+        } else {
+          User.findOne({ _id: req.user.id }).then((user) => {
+            if (user == null) {
+              return res.status(404).send("user not found");
+            } else {
+              user.email = req.body.email;
+              return user.save().then(() => res.status(200).send("ok"));
+            }
+          });
+        }
+      });
+    } else {
+      res.status(400).send(validationResult(req));
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(400).send("something went wrong");
+  }
+});
+
+router.post(
+  "/updatePassword",
+  validateToken,
+  body("password").isStrongPassword({ minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1, minSymbols: 1 }),
+  async (req, res) => {
+    try {
+      if (validationResult(req).isEmpty()) {
+        User.findOne({ _id: req.user.id }).then((user) => {
+          if (user == null) {
+            return res.status(404).send("user not found");
+          } else {
+            user.password = bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10));
+            user.save();
+            return res.status(200).send("ok");
+          }
+        });
+      } else {
+        res.status(400).send(validationResult(req));
+      }
+    } catch (err) {
+      console.log(err);
+      res.status(400).send("something went wrong");
+    }
+  }
+);
+
 router.post("/login", async (req, res) => {
   try {
     User.findOne({ email: req.body.email }).then(async (foundUser) => {

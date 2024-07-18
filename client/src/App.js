@@ -4,6 +4,7 @@ import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import SwipingWrapper from "./components/SwipingWrapper";
 import Login from "./components/Login";
 import Register from "./components/Register";
+import EditProfile from "./components/EditProfile";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Route path='/' exact element={<SwipingWrapper />} />
         <Route path='/login' exact element={<Login email='asd@b.com' password='1Aa_12345' />} />
         <Route path='/register' exact element={<Register />} />
+        <Route path='/edit' exact element={<EditProfile />} />
         <Route path='*' exact element={<Navigate to='/' replace />} />
       </Routes>
     </BrowserRouter>

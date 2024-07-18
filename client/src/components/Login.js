@@ -34,7 +34,6 @@ function Login({ email, password }) {
       >
         Register instead
       </button>
-      <div>{/*<button onClick={() => getDescription("6696c3b71e6c57ae09d14977").then(console.log)}>Test</button>*/}</div>
     </div>
   );
 }
