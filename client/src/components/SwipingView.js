@@ -1,47 +1,81 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import checkAuthentication from "../apiRequests/checkAuthentication";
 import getUserToShow from "../apiRequests/getUserToShow";
-import { decodeToken } from "react-jwt";
-import { useNavigate } from "react-router-dom";
+import like from "../apiRequests/likeUser";
+import dislike from "../apiRequests/dislikeUser";
 
-function SwipingView() {
-  const navigate = useNavigate();
+function SwipingView({ name, description, id }) {
+  const [nameText, setNameText] = useState("");
+  const [descriptionText, setDescriptionText] = useState("");
+  const [targetId, setTargetId] = useState("");
   useEffect(() => {
-    checkAuthentication(localStorage.getItem("token")).then((isAuthenticated) => {
-      if (!isAuthenticated) {
-        navigate("/login");
-      }
-    });
-  });
-
-  console.log(decodeToken(localStorage.getItem("token")));
+    getUserToShow()
+      .then((newUser) => {
+        if (newUser) {
+          setNameText(newUser.name);
+          setDescriptionText(newUser.description);
+          setTargetId(newUser.id);
+        }
+      })
+      .catch(() => {
+        setNameText("");
+        setDescriptionText("");
+        setTargetId("");
+      });
+  }, []);
 
   return (
     <>
       <div>
         <div>
-          <h3>name</h3>
+          <h3>{nameText}</h3>
           <br />
-          <p>description</p>
+          <p>{descriptionText}</p>
         </div>
 
-        <button onClick={dislikeButton}>
+        <button
+          onClick={() => {
+            dislike(targetId);
+            getUserToShow()
+              .then((newUser) => {
+                if (newUser) {
+                  setNameText(newUser.name);
+                  setDescriptionText(newUser.description);
+                  setTargetId(newUser.id);
+                }
+              })
+              .catch(() => {
+                setNameText("");
+                setDescriptionText("");
+                setTargetId("");
+              });
+          }}
+        >
           <img src='/leftArrow.png' width='64px' height='64px' alt='dislike button' />
         </button>
-        <button onClick={likeButton}>
+        <button
+          onClick={() => {
+            like(targetId);
+            getUserToShow()
+              .then((newUser) => {
+                if (newUser) {
+                  setNameText(newUser.name);
+                  setDescriptionText(newUser.description);
+                  setTargetId(newUser.id);
+                }
+              })
+              .catch(() => {
+                setNameText("");
+                setDescriptionText("");
+                setTargetId("");
+              });
+          }}
+        >
           <img src='/rightArrow.png' width='64px' height='64px' alt='like button' />
         </button>
       </div>
     </>
   );
-}
-
-function likeButton() {
-  console.log("liked");
-}
-
-function dislikeButton() {
-  console.log("disliked");
 }
 
 export default SwipingView;

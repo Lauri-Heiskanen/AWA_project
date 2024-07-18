@@ -9,6 +9,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Chat = require("../models/Chat");
 const validateToken = require("../auth/validateToken");
+const { isValidObjectId } = require("mongoose");
 
 router.get("/", function (req, res, next) {
   res.send("api is up and running");
@@ -68,7 +69,7 @@ router.get("/authenticated", (req, res) => {
 
 router.post(
   "/register",
-  body("name").trim().isLength({ min: 1, max: 256 }).isAlpha(),
+  body("name").trim().isLength({ min: 1, max: 256 }),
   body("email").trim().isEmail(),
   body("password").isStrongPassword({ minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1, minSymbols: 1 }),
   async (req, res) => {
@@ -85,8 +86,21 @@ router.post(
               password: bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10)),
               likedUsers: [],
               dislikedUsers: [],
-            }).save();
-            res.status(201).send("ok");
+            })
+              .save()
+              .then(() => {
+                User.findOne({ email: req.body.email }).then((newUser) => {
+                  const token = jwt.sign(
+                    {
+                      id: newUser._id,
+                      email: newUser.email,
+                    },
+                    process.env.SECRET,
+                    { expiresIn: 120 }
+                  );
+                  res.status(201).json({ success: true, token });
+                });
+              });
           }
         });
       } else {
@@ -102,7 +116,7 @@ router.post(
 router.post("/login", async (req, res) => {
   try {
     User.findOne({ email: req.body.email }).then(async (foundUser) => {
-      if (bcrypt.compareSync(req.body.password, foundUser.password) && req.body.password) {
+      if (foundUser && bcrypt.compareSync(req.body.password, foundUser.password) && req.body.password) {
         const token = jwt.sign(
           {
             id: foundUser._id,
@@ -124,6 +138,9 @@ router.post("/login", async (req, res) => {
 router.get("/getUserToShow", validateToken, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user.id });
+    if (!user) {
+      return res.status(401).send("user not found");
+    }
 
     // get users that are yet to be rated
     let users = await User.find({ _id: { $nin: [...user.likedUsers, ...user.dislikedUsers, user._id] } });
@@ -149,11 +166,27 @@ router.get("/getUserToShow", validateToken, async (req, res) => {
 router.post("/like", validateToken, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user.id });
+    if (!user) {
+      return res.status(401).send("user not found");
+    }
+
+    if (!isValidObjectId(req.body.targetId)) {
+      return res.status(400).send("not valid ObjectId");
+    }
+
+    const targetUser = await User.findOne({ _id: req.body.targetId });
+    if (!targetUser) {
+      return res.status(401).send("user not found");
+    }
 
     // remove liked user from disliked users
-    const index = user.dislikedUsers.indexOf(req.body.targetId);
+    let index = user.dislikedUsers.indexOf(req.body.targetId);
     if (index >= 0) {
       user.dislikedUsers.splice(index, 1);
+    }
+    // skip if target already in likedUsers
+    if (user.likedUsers.includes(req.body.targetId)) {
+      return res.status(200).send("ok");
     }
 
     // save liked user to likedUsers
@@ -168,11 +201,19 @@ router.post("/like", validateToken, async (req, res) => {
 router.post("/dislike", validateToken, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user.id });
+    if (!user) {
+      return res.status(401).send("user not found");
+    }
 
     // remove disliked user from liked users
     const index = user.likedUsers.indexOf(req.body.targetId);
     if (index >= 0) {
       user.likedUsers.splice(index, 1);
+    }
+
+    // skip if target already in dislikedUsers
+    if (user.dislikedUsers.includes(req.body.targetId)) {
+      return res.status(200).send("ok");
     }
 
     // save liked user to dislikedUsers
@@ -187,6 +228,9 @@ router.post("/dislike", validateToken, async (req, res) => {
 router.get("/matches", validateToken, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user.id });
+    if (!user) {
+      return res.status(401).send("user not found");
+    }
     const matchedUsers = await getMatches(user);
     res.json(matchedUsers.map((u) => u.name));
   } catch (err) {
@@ -213,6 +257,9 @@ router.post("/message", validateToken, async (req, res) => {
 router.get("/chat/:targetUserId", validateToken, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user.id });
+    if (!user) {
+      return res.status(401).send("user not found");
+    }
     // check that the user and target user are matched
     const matchedUsers = await getMatches(user);
     if (matchedUsers.map((user) => user._id.toString()).includes(req.params.targetUserId)) {
