@@ -1,5 +1,5 @@
 function dislike(id, navigate) {
-  return fetch("/api/like", {
+  return fetch("/api/dislike", {
     method: "post",
     body: JSON.stringify({
       targetId: id,

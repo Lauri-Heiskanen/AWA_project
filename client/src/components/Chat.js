@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import getChat from "../apiRequests/getChat";
 import sendMessage from "../apiRequests/sendMessage";
-import M from "materialize-css";
-import NavWrapper from "./NavWrapper";
 
 function Chat({ targetUserId }) {
   const [chatMessages, setChatMessages] = useState([]);

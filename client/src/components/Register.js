@@ -32,7 +32,7 @@ function Register() {
           className='btn'
           onClick={() => {
             register(nameText, emailText, passwordText, descriptionText, navigate).then((res) => {
-              if (res.success) {
+              if (res && res.success) {
                 localStorage.setItem("token", res.token);
                 navigate("/");
               } else {

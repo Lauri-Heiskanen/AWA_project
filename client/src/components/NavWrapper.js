@@ -7,8 +7,6 @@ import M from "materialize-css";
 function NavWrapper({ element, targetUserId, setTargetUserId, matchedUsers, setMatchedUsers }) {
   const navigate = useNavigate();
 
-  let matchRefreshInterval = () => {};
-
   const elemes = document.querySelectorAll(".sidenav");
   const instances = M.Sidenav.init(elemes, {});
 
@@ -20,27 +18,37 @@ function NavWrapper({ element, targetUserId, setTargetUserId, matchedUsers, setM
         getMatches(navigate).then((matches) => {
           setMatchedUsers(matches);
         });
-
-        const matchRefreshTime = 5000; // time (ms) between matcehs are passively refreshed
-        matchRefreshInterval = setInterval(() => {
-          getMatches(navigate).then((matches) => {
-            setMatchedUsers(matches);
-          });
-        }, matchRefreshTime);
       }
-
-      // return a function to clear interval on unmount to prevent memory leak
-      // from https://stackoverflow.com/a/67337887
-      return () => clearInterval(matchRefreshInterval);
     });
   }, []);
 
   return (
     <>
-      <nav></nav>
+      <nav>
+        <div className='nav-wrapper'>
+          <a href='#' data-target='matches' className='sidenav-trigger left'>
+            Matches
+          </a>
+          <ul className='right'>
+            <li>
+              <a href='/'>Main</a>
+            </li>
+            <li>
+              <a href='/edit' className='right'>
+                Edit
+              </a>
+            </li>
+            <li>
+              <a href='/login' className='right'>
+                Log out
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
       <div className='chat-wrapper'>
         <div>
-          <ul id='slide-out' className='sidenav sidenav-fixed'>
+          <ul id='matches' className='sidenav sidenav-fixed'>
             {matchedUsers.map((m) => {
               return (
                 <li>
@@ -57,9 +65,6 @@ function NavWrapper({ element, targetUserId, setTargetUserId, matchedUsers, setM
               );
             })}
           </ul>
-          <a href='#' data-target='slide-out' className='sidenav-trigger'>
-            <i className='material-icons'>menu</i>
-          </a>
         </div>
         {element}
       </div>

@@ -5,7 +5,6 @@ import updateName from "../apiRequests/updateName";
 import updateEmail from "../apiRequests/updateEmail";
 import updateDescription from "../apiRequests/updateDescription";
 import updatePassword from "../apiRequests/updatePassword";
-import NavWrapper from "./NavWrapper";
 
 function EditProfile() {
   const navigate = useNavigate();
@@ -18,9 +17,19 @@ function EditProfile() {
   useEffect(() => {
     getUser().then((user) => {
       // if text is still "" set it to the fetched value
-      nameText != "" ? (() => {})() : setNameText(user.name);
-      descriptionText != "" ? (() => {})() : setDescriptionText(user.description);
-      emailText != "" ? (() => {})() : setEmailText(user.email);
+      // also add "active" to corresponding labels classes to avoid overlapping
+      if (nameText == "") {
+        setNameText(user.name);
+        document.getElementById("name-label").classList.add("active");
+      }
+      if (descriptionText == "") {
+        setDescriptionText(user.description);
+        document.getElementById("description-label").classList.add("active");
+      }
+      if (emailText == "") {
+        setEmailText(user.email);
+        document.getElementById("email-label").classList.add("active");
+      }
     });
   }, []);
 
@@ -30,11 +39,15 @@ function EditProfile() {
         <div className='row'>
           <div className='input-field col s12'>
             <input id='input-name' type='text' value={nameText} onChange={(e) => setNameText(e.target.value)}></input>
-            <label for='input-name'>Name</label>
+            <label id='name-label' for='input-name' className='active'>
+              Name
+            </label>
           </div>
           <div className='input-field col s12'>
             <input id='input-email' type='text' value={emailText} onChange={(e) => setEmailText(e.target.value)}></input>
-            <label for='input-email'>Email</label>
+            <label id='email-label' for='input-email'>
+              Email
+            </label>
           </div>
           <div className='input-field col s12'>
             <input id='input-password' type='text' value={passwordText} onChange={(e) => setPasswordText(e.target.value)}></input>
@@ -47,7 +60,9 @@ function EditProfile() {
               value={descriptionText}
               onChange={(e) => setDescriptionText(e.target.value)}
             ></textarea>
-            <label for='desc-textarea'>Description</label>
+            <label id='description-label' for='desc-textarea'>
+              Description
+            </label>
           </div>
         </div>
         <div className='row'>
@@ -73,6 +88,7 @@ function EditProfile() {
                   : updateEmail(emailText, navigate);
                 updatePassword(passwordText, navigate);
               });
+              navigate("/");
             }}
           >
             Save Changes

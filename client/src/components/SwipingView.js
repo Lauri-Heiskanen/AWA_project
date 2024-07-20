@@ -48,24 +48,18 @@ function SwipingView({ setMatchedUsers }) {
           <div className='col s4 m3 l2 offset-s1 offset-m1 offset-l2'>
             <button
               onClick={() => {
-                dislike(targetId, navigate).then(() => {
-                  getMatches(navigate).then((matches) => {
-                    setMatchedUsers(matches);
-                  });
-                });
-                getUserToShow(navigate)
-                  .then((newUser) => {
-                    if (newUser) {
-                      setNameText(newUser.name);
-                      setDescriptionText(newUser.description);
-                      setTargetId(newUser.id);
-                    }
-                  })
-                  .catch(() => {
-                    setNameText("");
-                    setDescriptionText("");
+                dislike(targetId, navigate);
+                getUserToShow(navigate).then((newUser) => {
+                  if (newUser) {
+                    setNameText(newUser.name);
+                    setDescriptionText(newUser.description);
+                    setTargetId(newUser.id);
+                  } else {
+                    setNameText("Sorry, couldn't find users to show you");
+                    setDescriptionText("Perhaps you're a bit too picky?");
                     setTargetId("");
-                  });
+                  }
+                });
               }}
             >
               <img className='responsive-img' src='/leftArrow.png' alt='dislike button' />
@@ -80,19 +74,17 @@ function SwipingView({ setMatchedUsers }) {
                   });
                 });
                 setMatchedUsers([]); // this is to trigger a re render of the matched users list
-                getUserToShow(navigate)
-                  .then((newUser) => {
-                    if (newUser) {
-                      setNameText(newUser.name);
-                      setDescriptionText(newUser.description);
-                      setTargetId(newUser.id);
-                    }
-                  })
-                  .catch(() => {
-                    setNameText("");
-                    setDescriptionText("");
+                getUserToShow(navigate).then((newUser) => {
+                  if (newUser) {
+                    setNameText(newUser.name);
+                    setDescriptionText(newUser.description);
+                    setTargetId(newUser.id);
+                  } else {
+                    setNameText("Sorry, couldn't find users to show you");
+                    setDescriptionText("Perhaps you're a bit too picky?");
                     setTargetId("");
-                  });
+                  }
+                });
               }}
             >
               <img className='responsive-img' src='/rightArrow.png' alt='like button' />
