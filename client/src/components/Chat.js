@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import getChat from "../apiRequests/getChat";
 import sendMessage from "../apiRequests/sendMessage";
 
@@ -12,7 +12,7 @@ function Chat({ targetUserId }) {
   let messageRefreshInterval = () => {};
 
   useEffect(() => {
-    const messageRefreshTime = 5000; // time (ms) between matcehs are passively refreshed
+    const messageRefreshTime = 1000; // time (ms) between matcehs are passively refreshed
 
     getChat(targetUserId, navigate).then((res) => {
       setChatInfo({ name: res.name, targetUserId: res.targetUserId, chatId: res.chatId });
@@ -36,7 +36,7 @@ function Chat({ targetUserId }) {
       <div className='container'>
         <div>
           <div>{chatInfo.name}</div>
-          <div style={{ maxHeight: "75vh", overflowY: "scroll" }}>
+          <div id='messages-container' style={{ maxHeight: "75vh", overflowY: "scroll", overflowX: "clip" }}>
             {chatMessages.map((m) => MessageElement({ text: m.text, sentBySeld: m.sender != targetUserId }))}
           </div>
           <div className='row'>
@@ -74,9 +74,16 @@ function Chat({ targetUserId }) {
 function MessageElement({ text, sentBySeld }) {
   return (
     <>
-      <div>
-        <p style={{ textAlign: sentBySeld ? "right" : "left", padding: "5px" }}>{text}</p>
-      </div>
+      <p
+        style={{
+          textAlign: sentBySeld ? "right" : "left",
+          margin: sentBySeld ? "10px 0px 10px 15vw" : "10px 15vw 10px 0px",
+          padding: "5px",
+          wordWrap: "break-word",
+        }}
+      >
+        {text}
+      </p>
     </>
   );
 }

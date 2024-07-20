@@ -47,7 +47,7 @@ function NavWrapper({ element, targetUserId, setTargetUserId, matchedUsers, setM
         </div>
       </nav>
       <div className='chat-wrapper'>
-        <div>
+        <div style={{ maxHeight: "75vh", overflowY: "scroll", overflowX: "clip" }}>
           <ul id='matches' className='sidenav sidenav-fixed'>
             {matchedUsers.map((m) => {
               return (
