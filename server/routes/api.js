@@ -12,7 +12,7 @@ const validateToken = require("../auth/validateToken");
 const { isValidObjectId } = require("mongoose");
 
 router.get("/", function (req, res, next) {
-  res.send("api is up and running");
+  res.status(200).json({ message: "api is up and running" });
 });
 
 router.get("/user", validateToken, async (req, res) => {
@@ -28,12 +28,13 @@ router.get("/user/name/:id", validateToken, async (req, res) => {
     const matchedUsers = await getMatches(user);
     if (matchedUsers.map((u) => u._id.toString()).includes(req.params.id) || req.user.id == req.params.id) {
       const targetUser = await User.findOne({ _id: req.params.id });
-      res.status(200).send({ name: targetUser.name });
+      res.status(200).json({ name: targetUser.name });
     } else {
-      res.status(403).send("not matched with target user");
+      res.status(403).json({ errorMessage: "not matched with target" });
     }
   } catch (err) {
     console.log(err);
+    res.status(400).json({ errorMessage: "something went wrong" });
   }
 });
 
@@ -45,12 +46,13 @@ router.get("/user/description/:id", validateToken, async (req, res) => {
     const matchedUsers = await getMatches(user);
     if (matchedUsers.map((u) => u._id.toString()).includes(req.params.id) || req.user.id == req.params.id) {
       const targetUser = await User.findOne({ _id: req.params.id });
-      res.status(200).send({ description: targetUser.description });
+      res.status(200).json({ description: targetUser.description });
     } else {
-      res.status(403).send("not matched with target user");
+      res.status(403).json({ errorMessage: "not matched with target user" });
     }
   } catch (err) {
     console.log(err);
+    res.status(400).json({ errorMessage: "something went wrong" });
   }
 });
 
@@ -96,7 +98,7 @@ router.post(
                       email: newUser.email,
                     },
                     process.env.SECRET,
-                    { expiresIn: 120 }
+                    { expiresIn: "1h" }
                   );
                   res.status(201).json({ success: true, token });
                 });
@@ -104,11 +106,11 @@ router.post(
           }
         });
       } else {
-        res.status(400).send(validationResult(req));
+        res.status(400).json({ errorMessage: validationResult(req) });
       }
     } catch (err) {
       console.log(err);
-      res.status(400).send("something went wrong");
+      res.status(400).json({ errorMessage: "something went wrong" });
     }
   }
 );
@@ -118,18 +120,18 @@ router.post("/updateName", validateToken, body("name").trim().isLength({ min: 1,
     if (validationResult(req).isEmpty()) {
       User.findOne({ _id: req.user.id }).then((user) => {
         if (user == null) {
-          return res.status(404).send("user not found");
+          return res.status(404).json({ errorMessage: "user not found" });
         } else {
           user.name = req.body.name;
-          return user.save().then(() => res.status(200).send("ok"));
+          return user.save().then(() => res.status(200).json({ message: "ok" }));
         }
       });
     } else {
-      res.status(400).send(validationResult(req));
+      res.status(400).json({ errorMessage: "invalid credentials", reason: validationResult(req) });
     }
   } catch (err) {
     console.log(err);
-    res.status(400).send("something went wrong");
+    res.status(400).json({ errorMessage: "something went wrong" });
   }
 });
 
@@ -137,15 +139,15 @@ router.post("/updateDescription", validateToken, async (req, res) => {
   try {
     User.findOne({ _id: req.user.id }).then((user) => {
       if (user == null) {
-        return res.status(404).send("user not found");
+        return res.status(404).json({ errorMessage: "user not found" });
       } else {
         user.description = req.body.description;
-        return user.save().then(() => res.status(200).send("ok"));
+        return user.save().then(() => res.status(200).json({ message: "ok" }));
       }
     });
   } catch (err) {
     console.log(err);
-    res.status(400).send("something went wrong");
+    res.status(400).json({ errorMessage: "something went wrong" });
   }
 });
 
@@ -158,20 +160,20 @@ router.post("/updateEmail", validateToken, body("email").trim().isEmail(), async
         } else {
           User.findOne({ _id: req.user.id }).then((user) => {
             if (user == null) {
-              return res.status(404).send("user not found");
+              return res.status(404).json({ errorMessage: "user not found" });
             } else {
               user.email = req.body.email;
-              return user.save().then(() => res.status(200).send("ok"));
+              return user.save().then(() => res.status(200).json({ message: "ok" }));
             }
           });
         }
       });
     } else {
-      res.status(400).send(validationResult(req));
+      res.status(400).json({ errorMessage: validationResult(req) });
     }
   } catch (err) {
     console.log(err);
-    res.status(400).send("something went wrong");
+    res.status(400).json({ errorMessage: "something went wrong" });
   }
 });
 
@@ -184,19 +186,19 @@ router.post(
       if (validationResult(req).isEmpty()) {
         User.findOne({ _id: req.user.id }).then((user) => {
           if (user == null) {
-            return res.status(404).send("user not found");
+            return res.status(404).json({ errorMessage: "user not found" });
           } else {
             user.password = bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10));
             user.save();
-            return res.status(200).send("ok");
+            return res.status(200).json({ message: "ok" });
           }
         });
       } else {
-        res.status(400).send(validationResult(req));
+        res.status(400).json({ errorMessage: validationResult(req) });
       }
     } catch (err) {
       console.log(err);
-      res.status(400).send("something went wrong");
+      res.status(400).json({ errorMessage: "something went wrong" });
     }
   }
 );
@@ -211,15 +213,16 @@ router.post("/login", async (req, res) => {
             email: foundUser.email,
           },
           process.env.SECRET,
-          { expiresIn: 120 }
+          { expiresIn: "1h" }
         );
         res.json({ success: true, token });
       } else {
-        res.status(401).send("auth failed");
+        res.status(401).json({ errorMessage: "auth failed" });
       }
     });
   } catch (err) {
     console.log(err);
+    res.status(400).json({ errorMessage: "something went wrong" });
   }
 });
 
@@ -227,7 +230,7 @@ router.get("/getUserToShow", validateToken, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user.id });
     if (!user) {
-      return res.status(401).send("user not found");
+      return res.status(401).json({ errorMessage: "user not found" });
     }
 
     // get users that are yet to be rated
@@ -240,7 +243,7 @@ router.get("/getUserToShow", validateToken, async (req, res) => {
 
     // if no such users are found return nothing
     if (users.length == 0) {
-      res.status(404).send("no viable users found");
+      res.status(404).json({ errorMessage: "no viable users found" });
     } else {
       // get a random user from found users
       const targetUser = users[randomNumber(0, users.length)];
@@ -255,16 +258,16 @@ router.post("/like", validateToken, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user.id });
     if (!user) {
-      return res.status(401).send("user not found");
+      return res.status(401).json({ errorMessage: "user not found" });
     }
 
     if (!isValidObjectId(req.body.targetId)) {
-      return res.status(400).send("not valid ObjectId");
+      return res.status(400).json({ errorMessage: "not valid ObjectId" });
     }
 
     const targetUser = await User.findOne({ _id: req.body.targetId });
     if (!targetUser) {
-      return res.status(401).send("user not found");
+      return res.status(401).json({ errorMessage: "user not found" });
     }
 
     // remove liked user from disliked users
@@ -274,13 +277,13 @@ router.post("/like", validateToken, async (req, res) => {
     }
     // skip if target already in likedUsers
     if (user.likedUsers.includes(req.body.targetId)) {
-      return res.status(200).send("ok");
+      return res.status(200).json({ message: "ok" });
     }
 
     // save liked user to likedUsers
     user.likedUsers.push(req.body.targetId);
     user.save();
-    res.status(201).send("ok");
+    res.status(201).json({ errorMessage: "ok" });
   } catch (err) {
     console.log(err);
   }
@@ -290,7 +293,16 @@ router.post("/dislike", validateToken, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user.id });
     if (!user) {
-      return res.status(401).send("user not found");
+      return res.status(401).json({ errorMessage: "user not found" });
+    }
+
+    if (!isValidObjectId(req.body.targetId)) {
+      return res.status(400).json({ errorMessage: "not valid ObjectId" });
+    }
+
+    const targetUser = await User.findOne({ _id: req.body.targetId });
+    if (!targetUser) {
+      return res.status(401).json({ errorMessage: "user not found" });
     }
 
     // remove disliked user from liked users
@@ -301,13 +313,13 @@ router.post("/dislike", validateToken, async (req, res) => {
 
     // skip if target already in dislikedUsers
     if (user.dislikedUsers.includes(req.body.targetId)) {
-      return res.status(200).send("ok");
+      return res.status(200).json({ message: "ok" });
     }
 
     // save liked user to dislikedUsers
     user.dislikedUsers.push(req.body.targetId);
     user.save();
-    res.status(201).send("ok");
+    res.status(201).json({ errorMessage: "ok" });
   } catch (err) {
     console.log(err);
   }
@@ -317,10 +329,17 @@ router.get("/matches", validateToken, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user.id });
     if (!user) {
-      return res.status(401).send("user not found");
+      return res.status(401).json({ errorMessage: "user not found" });
     }
     const matchedUsers = await getMatches(user);
-    res.json(matchedUsers.map((u) => u.name));
+    res.json(
+      matchedUsers.map((u) => {
+        return {
+          name: u.name,
+          id: u._id,
+        };
+      })
+    );
   } catch (err) {
     console.log(err);
   }
@@ -331,11 +350,11 @@ router.post("/message", validateToken, async (req, res) => {
     // at this point the chat has already been created
     const chat = await Chat.findOne({ _id: req.body.chatId });
     if (chat == null) {
-      res.status(404).send("failed to find chat");
+      res.status(404).json({ errorMessage: "failed to find chat" });
     } else {
       chat.messages.push({ sender: req.user.id, text: req.body.text });
       chat.save();
-      res.status(200).send("ok");
+      res.status(200).json(chat.messages.at(-1));
     }
   } catch (err) {
     console.log(err);
@@ -346,7 +365,7 @@ router.get("/chat/:targetUserId", validateToken, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user.id });
     if (!user) {
-      return res.status(401).send("user not found");
+      return res.status(401).json({ errorMessage: "user not found" });
     }
     // check that the user and target user are matched
     const matchedUsers = await getMatches(user);
@@ -358,9 +377,10 @@ router.get("/chat/:targetUserId", validateToken, async (req, res) => {
         chat = new Chat({ users: [user._id, req.params.targetUserId], messages: [] });
         new Chat(chat).save();
       }
-      res.status(200).json({ user: (await User.findOne({ _id: req.params.targetUserId })).name, messages: chat.messages, chatId: chat._id });
+      const targetUser = await User.findOne({ _id: req.params.targetUserId });
+      res.status(200).json({ user: targetUser.name, targetUserId: targetUser._id, messages: chat.messages, chatId: chat._id });
     } else {
-      res.status(403).send("not matched with target user");
+      res.status(403).json({ errorMessage: "not matched with target user" });
     }
   } catch (err) {
     console.log(err);

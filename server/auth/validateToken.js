@@ -11,10 +11,10 @@ module.exports = function (req, res, next) {
     token = null;
   }
   if (token == null) {
-    return res.redirect(401, "/login");
+    return res.status(401).json({ redirect: "/login" });
   }
   jwt.verify(token, process.env.SECRET, (err, user) => {
-    if (err) return res.redirect(401, "/login");
+    if (err) return res.status(401).json({ redirect: "/login" });
     req.user = user;
     next();
   });

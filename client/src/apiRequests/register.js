@@ -1,4 +1,4 @@
-function register(name, email, password, description) {
+function register(name, email, password, description, navigate) {
   return fetch("/api/register", {
     method: "post",
     body: JSON.stringify({
@@ -8,7 +8,15 @@ function register(name, email, password, description) {
       description: description,
     }),
     headers: { "Content-type": "application/json; charset=UTF-8" },
-  }).then((res) => res.json());
+  }).then((res) =>
+    res.json().then((data) => {
+      if (data.redirect) {
+        navigate("/login");
+      } else if (!data.errorMessage) {
+        return data;
+      }
+    })
+  );
 }
 
 export default register;

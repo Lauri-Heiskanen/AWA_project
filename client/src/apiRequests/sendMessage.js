@@ -1,8 +1,9 @@
-function like(id, navigate) {
-  return fetch("/api/like", {
+function sendMessage(id, text, navigate) {
+  return fetch("/api/message", {
     method: "post",
     body: JSON.stringify({
-      targetId: id,
+      chatId: id,
+      text: text,
     }),
     headers: { Authorization: "Bearer " + localStorage.getItem("token"), "Content-type": "application/json; charset=UTF-8" },
   }).then((res) =>
@@ -16,4 +17,4 @@ function like(id, navigate) {
   );
 }
 
-export default like;
+export default sendMessage;

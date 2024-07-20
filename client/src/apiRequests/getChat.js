@@ -1,9 +1,6 @@
-function like(id, navigate) {
-  return fetch("/api/like", {
-    method: "post",
-    body: JSON.stringify({
-      targetId: id,
-    }),
+function getName(targetUserId, navigate) {
+  return fetch("/api/chat/" + targetUserId, {
+    method: "get",
     headers: { Authorization: "Bearer " + localStorage.getItem("token"), "Content-type": "application/json; charset=UTF-8" },
   }).then((res) =>
     res.json().then((data) => {
@@ -16,4 +13,4 @@ function like(id, navigate) {
   );
 }
 
-export default like;
+export default getName;
