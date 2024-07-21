@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import checkAuthentication from "../apiRequests/checkAuthentication";
 import getMatches from "../apiRequests/getMatches";
+import logout from "../apiRequests/logout";
 import M from "materialize-css";
 
 function NavWrapper({ element, targetUserId, setTargetUserId, matchedUsers, setMatchedUsers }) {
@@ -11,13 +12,13 @@ function NavWrapper({ element, targetUserId, setTargetUserId, matchedUsers, setM
   const instances = M.Sidenav.init(elemes, {});
 
   useEffect(() => {
-    checkAuthentication(localStorage.getItem("token")).then((isAuthenticated) => {
-      if (!isAuthenticated) {
-        navigate("/login");
-      } else {
+    checkAuthentication().then((isAuthenticated) => {
+      if (isAuthenticated) {
         getMatches(navigate).then((matches) => {
           setMatchedUsers(matches);
         });
+      } else {
+        navigate("/login");
       }
     });
   }, []);
@@ -39,7 +40,12 @@ function NavWrapper({ element, targetUserId, setTargetUserId, matchedUsers, setM
               </a>
             </li>
             <li>
-              <a href='/login' className='right'>
+              <a
+                className='right'
+                onClick={() => {
+                  logout(navigate);
+                }}
+              >
                 Log out
               </a>
             </li>

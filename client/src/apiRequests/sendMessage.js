@@ -5,7 +5,7 @@ function sendMessage(id, text, navigate) {
       chatId: id,
       text: text,
     }),
-    headers: { Authorization: "Bearer " + localStorage.getItem("token"), "Content-type": "application/json; charset=UTF-8" },
+    headers: { "Content-type": "application/json; charset=UTF-8" },
   }).then((res) =>
     res.json().then((data) => {
       if (data.redirect) {

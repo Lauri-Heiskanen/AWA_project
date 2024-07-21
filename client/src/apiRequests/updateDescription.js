@@ -4,7 +4,7 @@ function updateDescription(description, navigate) {
     body: JSON.stringify({
       description: description,
     }),
-    headers: { Authorization: "Bearer " + localStorage.getItem("token"), "Content-type": "application/json; charset=UTF-8" },
+    headers: { "Content-type": "application/json; charset=UTF-8" },
   }).then((res) =>
     res.json().then((data) => {
       if (data.redirect) {

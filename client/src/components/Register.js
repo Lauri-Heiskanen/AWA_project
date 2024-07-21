@@ -7,7 +7,6 @@ function Register() {
   const [descriptionText, setDescriptionText] = useState("");
   const [emailText, setEmailText] = useState("");
   const [passwordText, setPasswordText] = useState("");
-  localStorage.setItem("token", "");
   const navigate = useNavigate();
   return (
     <>
@@ -33,10 +32,7 @@ function Register() {
           onClick={() => {
             register(nameText, emailText, passwordText, descriptionText, navigate).then((res) => {
               if (res && res.success) {
-                localStorage.setItem("token", res.token);
                 navigate("/");
-              } else {
-                localStorage.setItem("token", "");
               }
             });
           }}
