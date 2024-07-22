@@ -5,6 +5,7 @@ function dislike(targetId, navigate) {
     headers: { "Content-type": "application/json; charset=UTF-8" },
   }).then((res) =>
     res.json().then((data) => {
+      console.log(data);
       if (data.redirect) {
         navigate("/login");
       } else if (!data.errorMessage) {

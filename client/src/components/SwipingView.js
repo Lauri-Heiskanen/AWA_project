@@ -46,6 +46,7 @@ function SwipingView({ setMatchedUsers }) {
               onClick={() => {
                 dislike(targetId, navigate);
                 getUserToShow(navigate).then((newUser) => {
+                  console.log(newUser);
                   if (newUser) {
                     setNameText(newUser.name);
                     setDescriptionText(newUser.description);
