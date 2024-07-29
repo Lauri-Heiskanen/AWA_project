@@ -6,11 +6,15 @@ import { useNavigate } from "react-router-dom";
 import getMatches from "../apiRequests/getMatches";
 
 function SwipingView({ setMatchedUsers }) {
+  // this is the main view and is wrapped in NavWrapper
+  // is where the user "swipes" other users
+
   const [nameText, setNameText] = useState("");
   const [descriptionText, setDescriptionText] = useState("");
   const [targetId, setTargetId] = useState("");
   const navigate = useNavigate();
 
+  // when page is loaded, get and set shown user
   useEffect(() => {
     getUserToShow(navigate).then((newUser) => {
       if (newUser) {
@@ -46,7 +50,6 @@ function SwipingView({ setMatchedUsers }) {
               onClick={() => {
                 dislike(targetId, navigate);
                 getUserToShow(navigate).then((newUser) => {
-                  console.log(newUser);
                   if (newUser) {
                     setNameText(newUser.name);
                     setDescriptionText(newUser.description);
@@ -67,11 +70,12 @@ function SwipingView({ setMatchedUsers }) {
               onClick={() => {
                 like(targetId, navigate).then(() => {
                   getMatches(navigate).then((matches) => {
+                    console.log(matches);
                     setMatchedUsers(matches);
                   });
                 });
-                setMatchedUsers([]); // this is to trigger a re render of the matched users list
                 getUserToShow(navigate).then((newUser) => {
+                  console.log(newUser);
                   if (newUser) {
                     setNameText(newUser.name);
                     setDescriptionText(newUser.description);

@@ -11,6 +11,7 @@ const { isValidObjectId } = require("mongoose");
 const passport = require("../passport");
 const LocalStrategy = require("passport-local").Strategy;
 
+// used for testing
 router.get("/", function (req, res, next) {
   console.log(req.user._conditions._id);
   if (req.isAuthenticated()) {
@@ -21,15 +22,18 @@ router.get("/", function (req, res, next) {
   res.status(200).json({ message: "api is up and running" });
 });
 
+// returns whether or not user is authenticated
 router.get("/authenticated", (req, res) => {
   res.json({ authenticated: req.isAuthenticated() });
 });
 
+// returns information about the user
 router.get("/user", checkAuthenticated, async (req, res) => {
   const user = await User.findOne({ _id: req.user._conditions._id });
-  res.status(200).json({ email: user.email, name: user.name, description: user.description, likedUsers: user.likedUsers, dislikedUsers: user.dislikedUsers });
+  res.status(200).json({ email: user.email, name: user.name, description: user.description });
 });
 
+// returns username by id
 router.get("/user/name/:id", checkAuthenticated, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user._conditions._id });
@@ -48,6 +52,7 @@ router.get("/user/name/:id", checkAuthenticated, async (req, res) => {
   }
 });
 
+// return description by id
 router.get("/user/description/:id", checkAuthenticated, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user._conditions._id });
@@ -66,6 +71,7 @@ router.get("/user/description/:id", checkAuthenticated, async (req, res) => {
   }
 });
 
+// creates a new user
 router.post(
   "/register",
   checkNotAuthenticated,
@@ -89,7 +95,6 @@ router.post(
             })
               .save()
               .then(() => {
-                passport.authenticate("local");
                 res.status(201).json({ success: true });
               });
           }
@@ -104,6 +109,7 @@ router.post(
   }
 );
 
+// updates username
 router.post("/updateName", checkAuthenticated, body("name").trim().isLength({ min: 1, max: 256 }), async (req, res) => {
   try {
     if (validationResult(req).isEmpty()) {
@@ -124,6 +130,7 @@ router.post("/updateName", checkAuthenticated, body("name").trim().isLength({ mi
   }
 });
 
+// updates description
 router.post("/updateDescription", checkAuthenticated, async (req, res) => {
   try {
     User.findOne({ _id: req.user._conditions._id }).then((user) => {
@@ -140,6 +147,7 @@ router.post("/updateDescription", checkAuthenticated, async (req, res) => {
   }
 });
 
+// updates email
 router.post("/updateEmail", checkAuthenticated, body("email").trim().isEmail(), async (req, res) => {
   try {
     if (validationResult(req).isEmpty()) {
@@ -166,6 +174,7 @@ router.post("/updateEmail", checkAuthenticated, body("email").trim().isEmail(), 
   }
 });
 
+// updates password
 router.post(
   "/updatePassword",
   checkAuthenticated,
@@ -192,10 +201,12 @@ router.post(
   }
 );
 
+// authenticates session
 router.post("/login", checkNotAuthenticated, passport.authenticate("local"), (req, res, next) => {
   res.status(200).json({ success: true });
 });
 
+// logs user out
 router.post("/logout", checkAuthenticated, (req, res, next) => {
   req.logOut((err) => {
     if (err) {
@@ -205,6 +216,10 @@ router.post("/logout", checkAuthenticated, (req, res, next) => {
   });
 });
 
+// retrieves user to show
+// picks a random unshown user
+// if no such user is found, picks a random disliked user
+// if no such user is found, returns status 404
 router.get("/getUserToShow", checkAuthenticated, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user._conditions._id });
@@ -233,6 +248,7 @@ router.get("/getUserToShow", checkAuthenticated, async (req, res) => {
   }
 });
 
+// adds the target user to likedUsers and removes it from dislikedUsers
 router.post("/like", checkAuthenticated, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user._conditions._id });
@@ -268,6 +284,7 @@ router.post("/like", checkAuthenticated, async (req, res) => {
   }
 });
 
+// adds the target user to dislikedUsers and removes it from likedUsers
 router.post("/dislike", checkAuthenticated, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user._conditions._id });
@@ -304,6 +321,7 @@ router.post("/dislike", checkAuthenticated, async (req, res) => {
   }
 });
 
+// retrieves matched users
 router.get("/matches", checkAuthenticated, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user._conditions._id });
@@ -324,6 +342,7 @@ router.get("/matches", checkAuthenticated, async (req, res) => {
   }
 });
 
+// adds a message to a chat
 router.post("/message", checkAuthenticated, async (req, res) => {
   try {
     // at this point the chat has already been created
@@ -340,6 +359,7 @@ router.post("/message", checkAuthenticated, async (req, res) => {
   }
 });
 
+// returns chat by targetUserId or the id of the other user
 router.get("/chat/:targetUserId", checkAuthenticated, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user._conditions._id });
@@ -366,15 +386,16 @@ router.get("/chat/:targetUserId", checkAuthenticated, async (req, res) => {
   }
 });
 
+// returns [min, max[
+// if min == max, return min
 function randomNumber(min, max) {
-  // returns [min, max[
-  // if min == max, return min
   if (max >= min) {
     return Math.floor(Math.random() * (max - min)) + min;
   }
   return null;
 }
 
+// retrieves matched users
 async function getMatches(user) {
   const likedUsers = await User.find({ _id: { $in: [...user.likedUsers] } });
   const matchedUsers = likedUsers.filter((u) => u.likedUsers.includes(user._id));

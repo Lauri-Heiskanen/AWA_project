@@ -1,4 +1,3 @@
-import logo from "./logo.svg";
 import "./App.css";
 import { Route, Routes, Navigate, useNavigate } from "react-router-dom";
 import SwipingView from "./components/SwipingView";
@@ -8,24 +7,25 @@ import EditProfile from "./components/EditProfile";
 import Chat from "./components/Chat";
 import NavWrapper from "./components/NavWrapper";
 import { useEffect, useState } from "react";
-import getMatches from "./apiRequests/getMatches";
-import Test from "./components/Test";
 
 function App() {
   const [targetUserId, setTargetUserId] = useState("");
-
   const [matchedUsers, setMatchedUsers] = useState([]);
   const navigate = useNavigate();
 
+  // this listens for changes in teagerUserId
+  // and navigates to the chatpage if the id is not empty
   useEffect(() => {
     if (targetUserId != "") {
       navigate("/chat");
     }
   }, [targetUserId]);
 
+  // most components are wrapped in NavWrapper which includes the navbar and sidenav
+  // it also handles setting the targetUserId which controls which chat is shown if any
+  // it also fetches matched users
   return (
     <Routes>
-      <Route path='/test' exact element={<Test />} />
       <Route
         path='/'
         exact

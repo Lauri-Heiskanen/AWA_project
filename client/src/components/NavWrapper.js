@@ -6,6 +6,10 @@ import logout from "../apiRequests/logout";
 import M from "materialize-css";
 
 function NavWrapper({ element, targetUserId, setTargetUserId, matchedUsers, setMatchedUsers }) {
+  // most components are wrapped in NavWrapper which includes the navbar and sidenav
+  // it also handles setting the targetUserId which controls which chat is shown if any
+  // it also fetches matched users
+
   const navigate = useNavigate();
 
   const elemes = document.querySelectorAll(".sidenav");

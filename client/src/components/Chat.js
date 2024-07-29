@@ -4,6 +4,9 @@ import getChat from "../apiRequests/getChat";
 import sendMessage from "../apiRequests/sendMessage";
 
 function Chat({ targetUserId }) {
+  // this is the chat view that is loaded when a target user is chosen from NavWrapper
+  // the messages are updated every second and when a message is sent
+
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInfo, setChatInfo] = useState({});
   const [newMessage, setNewMessage] = useState("");

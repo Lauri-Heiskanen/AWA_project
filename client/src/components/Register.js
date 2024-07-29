@@ -1,5 +1,6 @@
 import { useState } from "react";
 import register from "../apiRequests/register";
+import login from "../apiRequests/login";
 import { useNavigate } from "react-router-dom";
 
 function Register() {
@@ -32,7 +33,12 @@ function Register() {
           onClick={() => {
             register(nameText, emailText, passwordText, descriptionText, navigate).then((res) => {
               if (res && res.success) {
-                navigate("/");
+                // if registeration is successful, log in
+                login(emailText, passwordText, navigate).then((res) => {
+                  if (res && res.success) {
+                    navigate("/");
+                  }
+                });
               }
             });
           }}

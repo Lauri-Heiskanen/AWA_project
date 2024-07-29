@@ -7,6 +7,8 @@ import updateDescription from "../apiRequests/updateDescription";
 import updatePassword from "../apiRequests/updatePassword";
 
 function EditProfile() {
+  // this is where the user can edit their profile
+
   const navigate = useNavigate();
 
   const [nameText, setNameText] = useState("");

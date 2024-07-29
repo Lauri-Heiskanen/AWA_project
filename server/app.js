@@ -64,9 +64,8 @@ app.use(
     cookie: {
       httpOnly: true,
       secure: false,
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in milliseconds,
-      rolling: true, // This resets the cookie's maxAge countdown with each request.
-      // sameSite: true
+      maxAge: 60 * 60 * 1000, // 1 hour,
+      rolling: true,
     },
   })
 );
@@ -74,6 +73,10 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+var apiRouter = require("./routes/api");
+app.use("/api", apiRouter);
+
+// this is mostly/completely copied from week 12 task instructions
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.resolve("..", "client", "build")));
   app.get("*", (req, res) => {
@@ -87,8 +90,5 @@ if (process.env.NODE_ENV === "production") {
   };
   app.use(cors(corsOptions));
 }
-
-var apiRouter = require("./routes/api");
-app.use("/api", apiRouter);
 
 module.exports = app;
