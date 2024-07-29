@@ -46,7 +46,7 @@ passport.deserializeUser((id, done) => {
   return done(null, User.findOne({ _id: id }));
 });
 
-const mongoDB = "mongodb://localhost:27017/testdb";
+const mongoDB = "mongodb://localhost:27017/projectdb";
 mongoose.connect(mongoDB);
 mongoose.Promise = Promise;
 const db = mongoose.connection;
