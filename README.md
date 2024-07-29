@@ -11,6 +11,7 @@ To install:
 2.	run “npm run preinstall”
 3.	run “npm run install”
 4.	set “SECRET” in “./server/.env” to a random string
+5.	install and run a mognodb server such that it can be connected to at “mongodb://localhost:27017/projectdb”
 
 To run production:
 1.	set “NODE_ENV=production” in “./server/.env”
