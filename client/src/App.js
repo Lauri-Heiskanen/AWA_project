@@ -39,7 +39,7 @@ function App() {
           />
         }
       />
-      <Route path='/login' exact element={<Login email='asd@b.com' password='1Aa_12345' />} />
+      <Route path='/login' exact element={<Login />} />
       <Route path='/register' exact element={<Register />} />
       <Route
         path='/edit'
