@@ -12,7 +12,7 @@ function SwipingView({ setMatchedUsers }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    getUserToShow().then((newUser) => {
+    getUserToShow(navigate).then((newUser) => {
       if (newUser) {
         setNameText(newUser.name);
         setDescriptionText(newUser.description);
@@ -46,6 +46,7 @@ function SwipingView({ setMatchedUsers }) {
               onClick={() => {
                 dislike(targetId, navigate);
                 getUserToShow(navigate).then((newUser) => {
+                  console.log(newUser);
                   if (newUser) {
                     setNameText(newUser.name);
                     setDescriptionText(newUser.description);

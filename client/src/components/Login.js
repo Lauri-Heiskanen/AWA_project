@@ -1,11 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import login from "../apiRequests/login";
 import { useNavigate } from "react-router-dom";
 
-function Login({ email, password }) {
+function Login() {
   const [emailText, setEmailText] = useState("asd@b.com");
   const [passwordText, setPasswordText] = useState("1Aa_12345");
-  localStorage.setItem("token", "");
   const navigate = useNavigate();
 
   return (
@@ -25,11 +24,9 @@ function Login({ email, password }) {
           className='btn'
           onClick={() =>
             login(emailText, passwordText, navigate).then((res) => {
-              if (res.success) {
-                localStorage.setItem("token", res.token);
+              if (res && res.success) {
+                console.log("navigating");
                 navigate("/");
-              } else {
-                localStorage.setItem("token", "");
               }
             })
           }

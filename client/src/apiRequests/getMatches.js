@@ -1,7 +1,8 @@
 function getMatches(navigate) {
   return fetch("/api/matches/", {
     method: "get",
-    headers: { Authorization: "Bearer " + localStorage.getItem("token"), "Content-type": "application/json; charset=UTF-8" },
+    credentials: "include",
+    headers: { "Content-type": "application/json; charset=UTF-8" },
   }).then((res) =>
     res.json().then((data) => {
       if (data.redirect) {

@@ -11,7 +11,7 @@ function register(name, email, password, description, navigate) {
   }).then((res) =>
     res.json().then((data) => {
       if (data.redirect) {
-        navigate("/login");
+        navigate("/");
       } else if (data.errorMessage) {
         return { success: false };
       } else {

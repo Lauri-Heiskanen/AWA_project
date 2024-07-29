@@ -1,7 +1,7 @@
-function checkAuthentication(token) {
+function checkAuthentication() {
   return fetch("/api/authenticated", {
     method: "get",
-    headers: { Authorization: "Bearer " + token, "Content-type": "application/json; charset=UTF-8" },
+    headers: { "Content-type": "application/json; charset=UTF-8" },
   })
     .then((res) => res.json())
     .then((data) => {

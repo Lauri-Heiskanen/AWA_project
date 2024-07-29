@@ -1,13 +1,50 @@
+require("dotenv").config();
+
 var express = require("express");
 var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 const mongoose = require("mongoose");
 const cors = require("cors");
-
-var apiRouter = require("./routes/api");
+const session = require("express-session");
+const passport = require("./passport"); // passport is brought through a local file so the same object can be imported elsewhere
+const LocalStrategy = require("passport-local").Strategy;
+const User = require("./models/User");
+const bcrypt = require("bcryptjs");
 
 var app = express();
+
+// this code is mostly copied from Erno Vanhala's passport-config.js from course material
+const authenticateUser = async (email, password, done) => {
+  const user = await User.findOne({ email: email });
+  if (user == null) {
+    return done(null, false);
+  }
+
+  try {
+    if (await bcrypt.compare(password, user.password)) {
+      return done(null, user);
+    } else {
+      return done(null, false);
+    }
+  } catch (e) {
+    return done(e);
+  }
+};
+
+passport.use(
+  new LocalStrategy(
+    {
+      usernameField: "email",
+      passwordField: "password",
+    },
+    authenticateUser
+  )
+);
+passport.serializeUser((user, done) => done(null, user.id));
+passport.deserializeUser((id, done) => {
+  return done(null, User.findOne({ _id: id }));
+});
 
 const mongoDB = "mongodb://localhost:27017/testdb";
 mongoose.connect(mongoDB);
@@ -19,8 +56,23 @@ app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(
+  session({
+    secret: process.env.SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: false,
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in milliseconds,
+      rolling: true, // This resets the cookie's maxAge countdown with each request.
+      // sameSite: true
+    },
+  })
+);
 
-app.use("/api", apiRouter);
+app.use(passport.initialize());
+app.use(passport.session());
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.resolve("..", "client", "build")));
@@ -31,8 +83,12 @@ if (process.env.NODE_ENV === "production") {
   var corsOptions = {
     origin: "http://localhost:3000",
     optionsSuccessStatus: 200,
+    credentials: true,
   };
   app.use(cors(corsOptions));
 }
+
+var apiRouter = require("./routes/api");
+app.use("/api", apiRouter);
 
 module.exports = app;

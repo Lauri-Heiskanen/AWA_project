@@ -4,29 +4,39 @@ var express = require("express");
 var router = express.Router();
 const { body, validationResult } = require("express-validator");
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 
 const User = require("../models/User");
 const Chat = require("../models/Chat");
-const validateToken = require("../auth/validateToken");
 const { isValidObjectId } = require("mongoose");
+const passport = require("../passport");
+const LocalStrategy = require("passport-local").Strategy;
 
 router.get("/", function (req, res, next) {
+  console.log(req.user._conditions._id);
+  if (req.isAuthenticated()) {
+    console.log("is authenticated");
+  } else {
+    console.log("is not authenticated");
+  }
   res.status(200).json({ message: "api is up and running" });
 });
 
-router.get("/user", validateToken, async (req, res) => {
-  const user = await User.findOne({ _id: req.user.id });
+router.get("/authenticated", (req, res) => {
+  res.json({ authenticated: req.isAuthenticated() });
+});
+
+router.get("/user", checkAuthenticated, async (req, res) => {
+  const user = await User.findOne({ _id: req.user._conditions._id });
   res.status(200).json({ email: user.email, name: user.name, description: user.description, likedUsers: user.likedUsers, dislikedUsers: user.dislikedUsers });
 });
 
-router.get("/user/name/:id", validateToken, async (req, res) => {
+router.get("/user/name/:id", checkAuthenticated, async (req, res) => {
   try {
-    const user = await User.findOne({ _id: req.user.id });
+    const user = await User.findOne({ _id: req.user._conditions._id });
 
     // check that the user and target user are matched or are the same
     const matchedUsers = await getMatches(user);
-    if (matchedUsers.map((u) => u._id.toString()).includes(req.params.id) || req.user.id == req.params.id) {
+    if (matchedUsers.map((u) => u._id.toString()).includes(req.params.id) || req.user._conditions._id == req.params.id) {
       const targetUser = await User.findOne({ _id: req.params.id });
       res.status(200).json({ name: targetUser.name });
     } else {
@@ -38,13 +48,13 @@ router.get("/user/name/:id", validateToken, async (req, res) => {
   }
 });
 
-router.get("/user/description/:id", validateToken, async (req, res) => {
+router.get("/user/description/:id", checkAuthenticated, async (req, res) => {
   try {
-    const user = await User.findOne({ _id: req.user.id });
+    const user = await User.findOne({ _id: req.user._conditions._id });
 
     // check that the user and target user are matched or are the same
     const matchedUsers = await getMatches(user);
-    if (matchedUsers.map((u) => u._id.toString()).includes(req.params.id) || req.user.id == req.params.id) {
+    if (matchedUsers.map((u) => u._id.toString()).includes(req.params.id) || req.user._conditions._id == req.params.id) {
       const targetUser = await User.findOne({ _id: req.params.id });
       res.status(200).json({ description: targetUser.description });
     } else {
@@ -56,21 +66,9 @@ router.get("/user/description/:id", validateToken, async (req, res) => {
   }
 });
 
-router.get("/authenticated", (req, res) => {
-  // this is mostly copied from Erno Vanhala's web-applications-week-8/auth/validateToken.js course material
-  const authHeader = req.headers["authorization"];
-  let token = null;
-  if (authHeader) {
-    token = authHeader.split(" ")[1];
-  }
-  jwt.verify(token, process.env.SECRET, (err, user) => {
-    if (err) res.json({ authenticated: false });
-    else res.json({ authenticated: true });
-  });
-});
-
 router.post(
   "/register",
+  checkNotAuthenticated,
   body("name").trim().isLength({ min: 1, max: 256 }),
   body("email").trim().isEmail(),
   body("password").isStrongPassword({ minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1, minSymbols: 1 }),
@@ -91,17 +89,8 @@ router.post(
             })
               .save()
               .then(() => {
-                User.findOne({ email: req.body.email }).then((newUser) => {
-                  const token = jwt.sign(
-                    {
-                      id: newUser._id,
-                      email: newUser.email,
-                    },
-                    process.env.SECRET,
-                    { expiresIn: "1h" }
-                  );
-                  res.status(201).json({ success: true, token });
-                });
+                passport.authenticate("local");
+                res.status(201).json({ success: true });
               });
           }
         });
@@ -115,10 +104,10 @@ router.post(
   }
 );
 
-router.post("/updateName", validateToken, body("name").trim().isLength({ min: 1, max: 256 }), async (req, res) => {
+router.post("/updateName", checkAuthenticated, body("name").trim().isLength({ min: 1, max: 256 }), async (req, res) => {
   try {
     if (validationResult(req).isEmpty()) {
-      User.findOne({ _id: req.user.id }).then((user) => {
+      User.findOne({ _id: req.user._conditions._id }).then((user) => {
         if (user == null) {
           return res.status(404).json({ errorMessage: "user not found" });
         } else {
@@ -135,9 +124,9 @@ router.post("/updateName", validateToken, body("name").trim().isLength({ min: 1,
   }
 });
 
-router.post("/updateDescription", validateToken, async (req, res) => {
+router.post("/updateDescription", checkAuthenticated, async (req, res) => {
   try {
-    User.findOne({ _id: req.user.id }).then((user) => {
+    User.findOne({ _id: req.user._conditions._id }).then((user) => {
       if (user == null) {
         return res.status(404).json({ errorMessage: "user not found" });
       } else {
@@ -151,14 +140,14 @@ router.post("/updateDescription", validateToken, async (req, res) => {
   }
 });
 
-router.post("/updateEmail", validateToken, body("email").trim().isEmail(), async (req, res) => {
+router.post("/updateEmail", checkAuthenticated, body("email").trim().isEmail(), async (req, res) => {
   try {
     if (validationResult(req).isEmpty()) {
       User.findOne({ email: req.body.email }).then((user) => {
         if (user != null) {
           return res.status(400).json({ email: "email taken" });
         } else {
-          User.findOne({ _id: req.user.id }).then((user) => {
+          User.findOne({ _id: req.user._conditions._id }).then((user) => {
             if (user == null) {
               return res.status(404).json({ errorMessage: "user not found" });
             } else {
@@ -179,12 +168,12 @@ router.post("/updateEmail", validateToken, body("email").trim().isEmail(), async
 
 router.post(
   "/updatePassword",
-  validateToken,
+  checkAuthenticated,
   body("password").isStrongPassword({ minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1, minSymbols: 1 }),
   async (req, res) => {
     try {
       if (validationResult(req).isEmpty()) {
-        User.findOne({ _id: req.user.id }).then((user) => {
+        User.findOne({ _id: req.user._conditions._id }).then((user) => {
           if (user == null) {
             return res.status(404).json({ errorMessage: "user not found" });
           } else {
@@ -203,34 +192,24 @@ router.post(
   }
 );
 
-router.post("/login", async (req, res) => {
-  try {
-    User.findOne({ email: req.body.email }).then(async (foundUser) => {
-      if (foundUser && bcrypt.compareSync(req.body.password, foundUser.password) && req.body.password) {
-        const token = jwt.sign(
-          {
-            id: foundUser._id,
-            email: foundUser.email,
-          },
-          process.env.SECRET,
-          { expiresIn: "1h" }
-        );
-        res.json({ success: true, token });
-      } else {
-        res.status(401).json({ errorMessage: "auth failed" });
-      }
-    });
-  } catch (err) {
-    console.log(err);
-    res.status(400).json({ errorMessage: "something went wrong" });
-  }
+router.post("/login", checkNotAuthenticated, passport.authenticate("local"), (req, res, next) => {
+  res.status(200).json({ success: true });
 });
 
-router.get("/getUserToShow", validateToken, async (req, res) => {
+router.post("/logout", checkAuthenticated, (req, res, next) => {
+  req.logOut((err) => {
+    if (err) {
+      return next(err);
+    }
+    return res.status(200).json({ redirect: true });
+  });
+});
+
+router.get("/getUserToShow", checkAuthenticated, async (req, res) => {
   try {
-    const user = await User.findOne({ _id: req.user.id });
+    const user = await User.findOne({ _id: req.user._conditions._id });
     if (!user) {
-      return res.status(401).json({ errorMessage: "user not found" });
+      return res.status(404).json({ errorMessage: "user not found" });
     }
 
     // get users that are yet to be rated
@@ -254,9 +233,9 @@ router.get("/getUserToShow", validateToken, async (req, res) => {
   }
 });
 
-router.post("/like", validateToken, async (req, res) => {
+router.post("/like", checkAuthenticated, async (req, res) => {
   try {
-    const user = await User.findOne({ _id: req.user.id });
+    const user = await User.findOne({ _id: req.user._conditions._id });
     if (!user) {
       return res.status(401).json({ errorMessage: "user not found" });
     }
@@ -289,9 +268,9 @@ router.post("/like", validateToken, async (req, res) => {
   }
 });
 
-router.post("/dislike", validateToken, async (req, res) => {
+router.post("/dislike", checkAuthenticated, async (req, res) => {
   try {
-    const user = await User.findOne({ _id: req.user.id });
+    const user = await User.findOne({ _id: req.user._conditions._id });
     if (!user) {
       return res.status(401).json({ errorMessage: "user not found" });
     }
@@ -325,9 +304,9 @@ router.post("/dislike", validateToken, async (req, res) => {
   }
 });
 
-router.get("/matches", validateToken, async (req, res) => {
+router.get("/matches", checkAuthenticated, async (req, res) => {
   try {
-    const user = await User.findOne({ _id: req.user.id });
+    const user = await User.findOne({ _id: req.user._conditions._id });
     if (!user) {
       return res.status(401).json({ errorMessage: "user not found" });
     }
@@ -345,14 +324,14 @@ router.get("/matches", validateToken, async (req, res) => {
   }
 });
 
-router.post("/message", validateToken, async (req, res) => {
+router.post("/message", checkAuthenticated, async (req, res) => {
   try {
     // at this point the chat has already been created
     const chat = await Chat.findOne({ _id: req.body.chatId });
     if (chat == null) {
       res.status(404).json({ errorMessage: "failed to find chat" });
     } else {
-      chat.messages.push({ sender: req.user.id, text: req.body.text });
+      chat.messages.push({ sender: req.user._conditions._id, text: req.body.text });
       chat.save();
       res.status(200).json(chat.messages.at(-1));
     }
@@ -361,9 +340,9 @@ router.post("/message", validateToken, async (req, res) => {
   }
 });
 
-router.get("/chat/:targetUserId", validateToken, async (req, res) => {
+router.get("/chat/:targetUserId", checkAuthenticated, async (req, res) => {
   try {
-    const user = await User.findOne({ _id: req.user.id });
+    const user = await User.findOne({ _id: req.user._conditions._id });
     if (!user) {
       return res.status(401).json({ errorMessage: "user not found" });
     }
@@ -400,6 +379,26 @@ async function getMatches(user) {
   const likedUsers = await User.find({ _id: { $in: [...user.likedUsers] } });
   const matchedUsers = likedUsers.filter((u) => u.likedUsers.includes(user._id));
   return matchedUsers;
+}
+
+// this code is mostly copied from Erno Vanhala's course material
+function checkAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
+    console.log("is authenticated");
+    return next();
+  }
+  console.log("is not authenticated");
+  return res.status(401).json({ redirect: true });
+}
+
+// this code is mostly copied from Erno Vanhala's course material
+function checkNotAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
+    console.log("is authenticated");
+    return res.status(401).json({ redirect: true });
+  }
+  console.log("is not authenticated");
+  return next();
 }
 
 module.exports = router;

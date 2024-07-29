@@ -9,6 +9,7 @@ import Chat from "./components/Chat";
 import NavWrapper from "./components/NavWrapper";
 import { useEffect, useState } from "react";
 import getMatches from "./apiRequests/getMatches";
+import Test from "./components/Test";
 
 function App() {
   const [targetUserId, setTargetUserId] = useState("");
@@ -24,6 +25,7 @@ function App() {
 
   return (
     <Routes>
+      <Route path='/test' exact element={<Test />} />
       <Route
         path='/'
         exact

@@ -1,9 +1,6 @@
-function updatePassword(password, navigate) {
-  return fetch("/api/updatePassword", {
+function logout(navigate) {
+  return fetch("/api/logout", {
     method: "post",
-    body: JSON.stringify({
-      password: password,
-    }),
     headers: { "Content-type": "application/json; charset=UTF-8" },
   }).then((res) =>
     res.json().then((data) => {
@@ -16,4 +13,4 @@ function updatePassword(password, navigate) {
   );
 }
 
-export default updatePassword;
+export default logout;
