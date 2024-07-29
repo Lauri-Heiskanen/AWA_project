@@ -1,4 +1,4 @@
-This is a course project
+This is a course project for Advanced Web Applications
 
 Installation
 
